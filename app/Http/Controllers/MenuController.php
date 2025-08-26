@@ -2,25 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Item;
+use App\Services\Contracts\MenuServiceInterface;
 use Illuminate\Http\Request;
 
 class MenuController extends Controller
 {
+    public function __construct(private MenuServiceInterface $menu)
+    {
+    }
+
     public function index(Request $request)
     {
-        $query = Item::with(['categories', 'tags', 'variations']);
+        $category = $request->input('category');
+        $tags = $request->filled('tags') ? explode(',', $request->input('tags')) : [];
 
-        if ($request->filled('category')) {
-            $category = $request->input('category');
-            $query->whereHas('categories', fn ($q) => $q->where('id', $category));
-        }
-
-        if ($request->filled('tags')) {
-            $tags = explode(',', $request->input('tags'));
-            $query->whereHas('tags', fn ($q) => $q->whereIn('name', $tags));
-        }
-
-        return $query->get();
+        return $this->menu->list($category, $tags);
     }
 }
